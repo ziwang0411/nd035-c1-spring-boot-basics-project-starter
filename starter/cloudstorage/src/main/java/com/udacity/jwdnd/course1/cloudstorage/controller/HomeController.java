@@ -1,6 +1,8 @@
 package com.udacity.jwdnd.course1.cloudstorage.controller;
 
+import com.udacity.jwdnd.course1.cloudstorage.model.CredentialForm;
 import com.udacity.jwdnd.course1.cloudstorage.model.FileForm;
+import com.udacity.jwdnd.course1.cloudstorage.model.NoteForm;
 import com.udacity.jwdnd.course1.cloudstorage.services.*;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
@@ -30,18 +32,21 @@ public class HomeController {
     }
 
     @GetMapping
-    public String getHomePage(Authentication authentication, @ModelAttribute("fileForm") FileForm fileForm, Model model) throws IOException {
+    public String getHomePage(Authentication authentication, @ModelAttribute("fileForm") FileForm fileForm, @ModelAttribute("noteForm") NoteForm noteForm, @ModelAttribute("credentialForm") CredentialForm credentialForm, Model model) throws IOException {
         Integer userId = userService.getUserId(authentication.getName());
         if (userId!=null) {
             model.addAttribute("files", fileService.getFilelistings(userId));
             model.addAttribute("notes", noteService.getNoteListings(userId));
+            model.addAttribute("credentials", credentialService.getCredentialListings(userId));
+            model.addAttribute("encryptionService", encryptionService);
+
         }
 
         return "home";
     }
 
     @PostMapping
-    public String newFile(Authentication authentication, @ModelAttribute("fileForm") FileForm fileForm, Model model) throws IOException {
+    public String newFile(Authentication authentication, @ModelAttribute("fileForm") FileForm fileForm, @ModelAttribute("noteForm") NoteForm noteForm, @ModelAttribute("credentialForm") CredentialForm credentialForm, Model model) throws IOException {
         Integer userId = userService.getUserId(authentication.getName());
         String[] fileListings = fileService.getFilelistings(userId);
         MultipartFile multipartFile = fileForm.getMultipartFile();
@@ -55,14 +60,14 @@ public class HomeController {
         }
         if (!fileIsDuplicate) {
             fileService.addFile(multipartFile, userId);
-            model.addAttribute("addFileSuccess", true);
+            model.addAttribute("result", "success");
 
         } else {
-            model.addAttribute("addFileFail", true);
+            model.addAttribute("result", "error");
             model.addAttribute("message", "You have tried to add a duplicate file");
         }
         model.addAttribute("files", fileService.getFilelistings(userId));
-        return "home";
+        return "result";
     }
 
     @GetMapping(
@@ -76,13 +81,13 @@ public class HomeController {
 
     @GetMapping(value = "/delete-file/{fileName}")
     public String deleteFile(
-            Authentication authentication, @PathVariable String fileName, @ModelAttribute("fileForm") FileForm fileForm,
+            Authentication authentication, @PathVariable String fileName, @ModelAttribute("fileForm") FileForm fileForm, @ModelAttribute("noteForm") NoteForm noteForm, @ModelAttribute("credentialForm") CredentialForm credentialForm,
             Model model) {
         fileService.deleteFile(fileName);
         Integer userId = userService.getUserId(authentication.getName());
         model.addAttribute("files", fileService.getFilelistings(userId));
         model.addAttribute("result", "success");
 
-        return "home";
+        return "result";
     }
 }
