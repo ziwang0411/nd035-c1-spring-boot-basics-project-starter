@@ -4,7 +4,10 @@ import com.udacity.jwdnd.course1.cloudstorage.model.CredentialForm;
 import com.udacity.jwdnd.course1.cloudstorage.model.FileForm;
 import com.udacity.jwdnd.course1.cloudstorage.model.NoteForm;
 import com.udacity.jwdnd.course1.cloudstorage.services.*;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -51,6 +54,7 @@ public class HomeController {
         String[] fileListings = fileService.getFilelistings(userId);
         MultipartFile multipartFile = fileForm.getMultipartFile();
         String fileName = multipartFile.getOriginalFilename();
+        if (fileName==null || fileName.equals("")) return "home";
         boolean fileIsDuplicate = false;
         for (String name: fileListings) {
             if (name.equals(fileName)) {
@@ -70,15 +74,29 @@ public class HomeController {
         return "result";
     }
 
+//    @GetMapping(
+//            value = "/get-file/{fileName}",
+//            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE
+//    )
+//    public @ResponseBody
+//    byte[] getFile(@PathVariable String fileName) {
+//        return fileService.getFile(fileName).getFileData();
+//    }
+
     @GetMapping(
             value = "/get-file/{fileName}",
             produces = MediaType.APPLICATION_OCTET_STREAM_VALUE
     )
     public @ResponseBody
-    byte[] getFile(@PathVariable String fileName) {
-        return fileService.getFile(fileName).getFileData();
-    }
+    ResponseEntity<byte[]> getFile(@PathVariable String fileName) {
+        byte[] bytes=fileService.getFile(fileName).getFileData();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentDispositionFormData("attachment", fileName);
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
 
+        ResponseEntity<byte[]> response =new ResponseEntity<byte[]>(bytes, headers, HttpStatus.CREATED);
+        return response;
+    }
     @GetMapping(value = "/delete-file/{fileName}")
     public String deleteFile(
             Authentication authentication, @PathVariable String fileName, @ModelAttribute("fileForm") FileForm fileForm, @ModelAttribute("noteForm") NoteForm noteForm, @ModelAttribute("credentialForm") CredentialForm credentialForm,

@@ -33,6 +33,7 @@ public class UserService {
 
     public Integer getUserId(String name) {
         User user = userMapper.getUser(name);
+        if (user==null) return null;
         return user.getUserId();
     }
 }
